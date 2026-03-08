@@ -1,0 +1,139 @@
+﻿@page "/"
+@page "/todos"
+@rendermode InteractiveServer
+@namespace TodoApp.Web.Pages.Todos
+
+<PageTitle>My Todos</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+
+    <!-- Header -->
+    <div class="d-flex justify-space-between align-center mb-6">
+        <div>
+            <MudText Typo="Typo.h4" Class="font-weight-bold">My Todos</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                @_totalCount task(s) total
+            </MudText>
+        </div>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+            StartIcon="@Icons.Material.Filled.Add"
+            OnClick="OpenCreateDialog"
+            Style="border-radius:8px;">
+            New Todo
+        </MudButton>
+    </div>
+
+    <!-- Filters -->
+    <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius:12px;">
+        <MudGrid>
+            <MudItem xs="12" sm="4">
+                <MudTextField @bind-Value="_searchText" Label="Search"
+                    Adornment="Adornment.Start"
+                    AdornmentIcon="@Icons.Material.Filled.Search"
+                    Variant="Variant.Outlined" Immediate="true"
+                    DebounceInterval="400"
+                    TextChanged="OnSearchChanged" />
+            </MudItem>
+            <MudItem xs="12" sm="3">
+                <MudSelect T="TodoStatus?"
+                           Value="_statusFilter"
+                           Label="Status"
+                           Variant="Variant.Outlined"
+                           Clearable="true"
+                           ValueChanged="@(async (TodoStatus? val) => { _statusFilter = val; await OnFilterChanged(val); })">
+                    @foreach (TodoStatus s in Enum.GetValues(typeof(TodoStatus)))
+                    {
+                        <MudSelectItem T="TodoStatus?" Value="@((TodoStatus?)s)">
+                            @s.ToString()
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" sm="3">
+                <MudSelect T="TodoPriority?"
+                           Value="_priorityFilter"
+                           Label="Priority"
+                           Variant="Variant.Outlined"
+                           Clearable="true"
+                           ValueChanged="@(async (TodoPriority? val) => { _priorityFilter = val; await OnFilterChanged(val); })">
+                    @foreach (TodoPriority p in Enum.GetValues(typeof(TodoPriority)))
+                    {
+                        <MudSelectItem T="TodoPriority?" Value="@((TodoPriority?)p)">
+                            @p.ToString()
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="2" Class="d-flex align-center">
+                <MudButton FullWidth="true" Variant="Variant.Outlined"
+                    OnClick="ClearFilters">Clear</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <!-- Stats Row -->
+    <MudGrid Class="mb-4">
+        @foreach (var stat in _stats)
+        {
+            <MudItem xs="6" sm="3">
+                <MudPaper Elevation="2" Class="pa-4 text-center"
+                          Style="@GetStatCardStyle(stat.Color)">
+                    <MudText Typo="Typo.h4" Style="@GetStatTextStyle(stat.Color)"
+                             Class="font-weight-bold">@stat.Count</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        @stat.Label
+                    </MudText>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+
+    <!-- Todo List -->
+    @if (_isLoading)
+    {
+        <div class="d-flex justify-center mt-8">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+        </div>
+    }
+    else if (!_todos.Any())
+    {
+        <MudPaper Elevation="0" Class="pa-12 text-center"
+            Style="border-radius:12px; border: 2px dashed #e0e0e0;">
+            <MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline"
+                Style="font-size:4rem; color:#bdbdbd;" />
+            <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mt-2">
+                No todos found
+            </MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Click "New Todo" to get started!
+            </MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <MudGrid>
+            @foreach (var todo in _todos)
+            {
+                <MudItem xs="12" sm="6" lg="4">
+                    <TodoCard Todo="todo"
+                        OnStatusChanged="@(async (status) => await OnStatusChanged((todo.Id, status)))"
+                        OnEdit="OpenEditDialog"
+                        OnDelete="DeleteTodo" />
+                </MudItem>
+            }
+        </MudGrid>
+
+        <!-- Pagination -->
+        @if (_totalPages > 1)
+        {
+            <div class="d-flex justify-center mt-6">
+                <MudPagination Count="_totalPages"
+                    Selected="_currentPage"
+                    SelectedChanged="OnPageChanged"
+                    Color="Color.Primary" />
+            </div>
+        }
+    }
+</MudContainer>
+

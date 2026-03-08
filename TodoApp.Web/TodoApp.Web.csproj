@@ -7,13 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Blazored.LocalStorage" Version="4.3.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.24" />
     <PackageReference Include="MudBlazor" Version="9.1.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Models\" />
-    <Folder Include="Services\" />
-    <Folder Include="Pages\" />
+    <ProjectReference Include="..\TodoApp.Domain\TodoApp.Domain.csproj" />
   </ItemGroup>
 
 </Project>

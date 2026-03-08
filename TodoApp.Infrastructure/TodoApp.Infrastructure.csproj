@@ -29,4 +29,8 @@
     <ProjectReference Include="..\TodoApp.Application\TodoApp.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Migrations\" />
+  </ItemGroup>
+
 </Project>

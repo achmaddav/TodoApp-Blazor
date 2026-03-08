@@ -1,0 +1,75 @@
+﻿@inject IApiService ApiService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="_isValid">
+            <MudTextField @bind-Value="_model.Title" Label="Title"
+                Variant="Variant.Outlined" Required="true"
+                Class="mb-4" />
+            <MudTextField @bind-Value="_model.Description" Label="Description"
+                Variant="Variant.Outlined" Lines="3" Class="mb-4" />
+            <MudGrid>
+                <MudItem xs="6">
+                    <MudSelect @bind-Value="_model.Priority" Label="Priority"
+                        Variant="Variant.Outlined">
+                        @foreach (TodoPriority p in Enum.GetValues(typeof(TodoPriority)))
+                        {
+                            <MudSelectItem Value="@p">@p</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="_dueDate" Label="Due Date"
+                        Variant="Variant.Outlined" />
+                </MudItem>
+            </MudGrid>
+            <MudSelect @bind-Value="_model.CategoryId" Label="Category"
+                Variant="Variant.Outlined" Clearable="true" Class="mt-4">
+                @foreach (var cat in Categories)
+                {
+                    <MudSelectItem Value="@((Guid?)cat.Id)">@cat.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField @bind-Value="_model.Tags" Label="Tags (comma separated)"
+                Variant="Variant.Outlined" Class="mt-4" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+            OnClick="Submit" Disabled="_isLoading">
+            @if (_isLoading)
+            { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+            Create
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public List<CategoryModel> Categories { get; set; } = new();
+
+    private MudForm _form = null!;
+    private CreateTodoModel _model = new();
+    private DateTime? _dueDate;
+    private bool _isValid, _isLoading;
+
+    private async Task Submit()
+    {
+        await _form.Validate();
+        if (!_isValid) return;
+        _isLoading = true;
+        _model.DueDate = _dueDate;
+        var result = await ApiService.CreateTodoAsync(_model);
+        _isLoading = false;
+        if (result is not null)
+        {
+            Snackbar.Add("Todo created!", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else Snackbar.Add("Failed to create todo.", Severity.Error);
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

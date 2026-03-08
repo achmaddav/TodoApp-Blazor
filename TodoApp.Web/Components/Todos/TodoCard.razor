@@ -1,0 +1,125 @@
+﻿@using TodoApp.Domain.Enums
+@using TodoApp.Web.Models
+
+
+<MudPaper Elevation="3" Class="pa-4 todo-card" Style="@_cardStyle">
+
+    <!-- Header -->
+    <div class="d-flex justify-space-between align-start mb-2">
+        <div class="d-flex align-center" style="gap:8px; flex:1; min-width:0;">
+            <MudCheckBox Value="@(Todo.Status == TodoStatus.Completed)"
+                Color="Color.Success"
+                ValueChanged="@(async (bool v) => await ToggleComplete(v))" />
+            <MudText Typo="Typo.subtitle1" Class="font-weight-medium text-truncate"
+                Style="@(Todo.Status == TodoStatus.Completed
+                    ? "text-decoration:line-through; color:#9e9e9e;"
+                    : "")">
+                @Todo.Title
+            </MudText>
+        </div>
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
+            <MudMenuItem OnClick="@(() => OnEdit.InvokeAsync(Todo))">
+                <div class="d-flex align-center" style="gap:8px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                    Edit
+                </div>
+            </MudMenuItem>
+            <MudMenuItem OnClick="DeleteAsync">
+                <div class="d-flex align-center" style="gap:8px; color:#f44336;">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete"
+                        Size="Size.Small" Color="Color.Error" />
+                    Delete
+                </div>
+            </MudMenuItem>
+        </MudMenu>
+    </div>
+
+    <!-- Description -->
+    @if (!string.IsNullOrEmpty(Todo.Description))
+    {
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3 ml-9"
+            Style="overflow:hidden; display:-webkit-box;
+                   -webkit-line-clamp:2; -webkit-box-orient:vertical;">
+            @Todo.Description
+        </MudText>
+    }
+
+    <!-- Badges -->
+    <div class="d-flex flex-wrap align-center ml-9" style="gap:6px; margin-bottom:10px;">
+        <MudChip T="string" Size="Size.Small" Style="@_priorityChipStyle">
+            @Todo.PriorityLabel
+        </MudChip>
+
+        @if (!string.IsNullOrEmpty(Todo.CategoryName))
+        {
+            <MudChip T="string" Size="Size.Small" Style="@GetCategoryChipStyle()">
+                @Todo.CategoryName
+            </MudChip>
+        }
+
+        @if (Todo.IsOverdue)
+        {
+            <MudChip T="string" Size="Size.Small" Color="Color.Error"
+                     Icon="@Icons.Material.Filled.Warning" Style="height:22px;">
+                Overdue
+            </MudChip>
+        }
+    </div>
+
+    <!-- Footer -->
+    <div class="d-flex justify-space-between align-center ml-9">
+        <MudSelect Value="Todo.Status" T="TodoStatus"
+                   Variant="Variant.Text" Dense="true"
+                   Style="max-width:130px; font-size:12px;"
+                   ValueChanged="@(async (TodoStatus s) => await OnStatusChanged.InvokeAsync(s))">
+            @foreach (TodoStatus s in Enum.GetValues(typeof(TodoStatus)))
+            {
+                <MudSelectItem Value="@s">@s</MudSelectItem>
+            }
+        </MudSelect>
+
+        @if (Todo.DueDate.HasValue)
+        {
+            <MudText Typo="Typo.caption"
+                Color="@(Todo.IsOverdue ? Color.Error : Color.Secondary)">
+                <MudIcon Icon="@Icons.Material.Filled.Schedule"
+                    Size="Size.Small" Class="mr-1" />
+                @Todo.DueDate.Value.ToString("MMM dd")
+            </MudText>
+        }
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter] public TodoItemModel Todo { get; set; } = null!;
+    [Parameter] public EventCallback<TodoStatus> OnStatusChanged { get; set; }
+    [Parameter] public EventCallback<TodoItemModel> OnEdit { get; set; }
+    [Parameter] public EventCallback<Guid> OnDelete { get; set; }
+
+    private string _cardStyle =>
+        $"border-radius:12px; border-left:4px solid {GetPriorityColor()}; transition:all 0.2s ease;";
+
+    private string _priorityChipStyle =>
+        $"background:{GetPriorityColor()}22; color:{GetPriorityColor()}; height:22px;";
+
+    private string GetCategoryChipStyle() =>
+        $"background:{Todo.CategoryColor}22; color:{Todo.CategoryColor}; height:22px;";
+
+    private async Task ToggleComplete(bool isChecked)
+    {
+        var newStatus = isChecked ? TodoStatus.Completed : TodoStatus.Pending;
+        await OnStatusChanged.InvokeAsync(newStatus);
+    }
+
+    private async Task DeleteAsync()
+        => await OnDelete.InvokeAsync(Todo.Id);
+
+    private string GetPriorityColor() => Todo.Priority switch
+    {
+        TodoPriority.Low => "#10B981",
+        TodoPriority.Medium => "#F59E0B",
+        TodoPriority.High => "#EF4444",
+        TodoPriority.Critical => "#7C3AED",
+        _ => "#6366F1"
+    };
+}

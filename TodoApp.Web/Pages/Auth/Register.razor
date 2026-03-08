@@ -1,0 +1,108 @@
+﻿@page "/register"
+@layout EmptyLayout
+@inject IApiService ApiService
+@inject CustomAuthStateProvider AuthProvider
+@inject NavigationManager Nav
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-10">
+    <MudPaper Elevation="8" Class="pa-8" Style="border-radius:16px;">
+
+        <div class="d-flex flex-column align-center mb-6">
+            <MudIcon Icon="@Icons.Material.Filled.PersonAdd"
+                     Color="Color.Primary" Style="font-size:3rem;" />
+            <MudText Typo="Typo.h4" Class="mt-2 font-weight-bold">Create Account</MudText>
+        </div>
+
+        <MudForm @ref="_form" @bind-IsValid="_isValid">
+            <MudTextField @bind-Value="_model.FullName"
+                Label="Full Name" Variant="Variant.Outlined"
+                Adornment="Adornment.Start"
+                AdornmentIcon="@Icons.Material.Filled.Person"
+                Required="true" Class="mb-4" />
+
+            <MudTextField @bind-Value="_model.Email"
+                Label="Email Address" InputType="InputType.Email"
+                Variant="Variant.Outlined"
+                Adornment="Adornment.Start"
+                AdornmentIcon="@Icons.Material.Filled.Email"
+                Required="true" Class="mb-4" />
+
+            <MudTextField @bind-Value="_model.Password"
+                Label="Password" InputType="InputType.Password"
+                Variant="Variant.Outlined"
+                Adornment="Adornment.Start"
+                AdornmentIcon="@Icons.Material.Filled.Lock"
+                Required="true" Class="mb-4" />
+
+            <MudTextField @bind-Value="_model.ConfirmPassword"
+                Label="Confirm Password" InputType="InputType.Password"
+                Variant="Variant.Outlined"
+                Adornment="Adornment.Start"
+                AdornmentIcon="@Icons.Material.Filled.Lock"
+                Required="true" Class="mb-4" />
+
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-4">
+                    @_errorMessage
+                </MudAlert>
+            }
+
+            <MudButton FullWidth="true" Variant="Variant.Filled"
+                Color="Color.Primary" Size="Size.Large"
+                OnClick="HandleRegister" Disabled="_isLoading"
+                Style="border-radius:8px; height:48px;">
+                @if (_isLoading)
+                {
+                    <MudProgressCircular Size="Size.Small"
+                        Indeterminate="true" Class="mr-2" />
+                }
+                Create Account
+            </MudButton>
+        </MudForm>
+
+        <MudDivider Class="my-4" />
+        <div class="d-flex justify-center">
+            <MudText Typo="Typo.body2">Already have an account?</MudText>
+            <MudLink Href="/login" Class="ml-1">Sign In</MudLink>
+        </div>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private MudForm _form = null!;
+    private RegisterModel _model = new();
+    private bool _isValid;
+    private bool _isLoading;
+    private string _errorMessage = string.Empty;
+
+    private async Task HandleRegister()
+    {
+        await _form.Validate();
+        if (!_isValid) return;
+
+        if (_model.Password != _model.ConfirmPassword)
+        {
+            _errorMessage = "Passwords do not match.";
+            return;
+        }
+
+        _isLoading = true;
+        try
+        {
+            var result = await ApiService.RegisterAsync(_model);
+            if (result is null)
+            {
+                _errorMessage = "Registration failed. Email may already exist.";
+                return;
+            }
+            await AuthProvider.MarkAsAuthenticatedAsync(result.Token);
+            Nav.NavigateTo("/", true);
+        }
+        catch
+        {
+            _errorMessage = "An error occurred. Please try again.";
+        }
+        finally { _isLoading = false; }
+    }
+}
