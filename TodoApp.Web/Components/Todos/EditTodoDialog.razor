@@ -1,5 +1,135 @@
-﻿<h3>EditTodoDialog</h3>
+﻿@using TodoApp.Web.Models
+@using TodoApp.Web.Services
+@using TodoApp.Domain.Enums
+@inject IApiService ApiService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="_isValid">
+            <MudTextField @bind-Value="_model.Title"
+                          Label="Title"
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          Class="mb-4" />
+
+            <MudTextField @bind-Value="_model.Description"
+                          Label="Description"
+                          Variant="Variant.Outlined"
+                          Lines="3"
+                          Class="mb-4" />
+
+            <MudGrid>
+                <MudItem xs="6">
+                    <MudSelect T="TodoPriority"
+                               @bind-Value="_model.Priority"
+                               Label="Priority"
+                               Variant="Variant.Outlined">
+                        @foreach (TodoPriority p in Enum.GetValues(typeof(TodoPriority)))
+                        {
+                            <MudSelectItem Value="@p">@p</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="_dueDate"
+                                   Label="Due Date"
+                                   Variant="Variant.Outlined" />
+                </MudItem>
+            </MudGrid>
+
+            <MudSelect T="Guid?"
+                       Value="_model.CategoryId"
+                       Label="Category"
+                       Variant="Variant.Outlined"
+                       Clearable="true"
+                       Class="mt-4"
+                       ValueChanged="@((Guid? val) => _model.CategoryId = val)">
+                @foreach (var cat in Categories)
+                {
+                    <MudSelectItem T="Guid?" Value="@((Guid?)cat.Id)">
+                        @cat.Name
+                    </MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudTextField @bind-Value="_model.Tags"
+                          Label="Tags (comma separated)"
+                          Variant="Variant.Outlined"
+                          Class="mt-4" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   OnClick="Submit"
+                   Disabled="_isLoading">
+            @if (_isLoading)
+            {
+                <MudProgressCircular Size="Size.Small"
+                                     Indeterminate="true" Class="mr-2" />
+            }
+            Update
+        </MudButton>
+    </DialogActions>
+</MudDialog>
 
 @code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
 
+    [Parameter] public TodoItemModel Todo { get; set; } = null!;
+    [Parameter] public List<CategoryModel> Categories { get; set; } = new();
+
+    private MudForm _form = null!;
+    private UpdateTodoModel _model = new();
+    private DateTime? _dueDate;
+    private bool _isValid, _isLoading;
+
+    protected override void OnParametersSet()
+    {
+        if (Todo is not null)
+        {
+            _model = new UpdateTodoModel
+            {
+                Title = Todo.Title,
+                Description = Todo.Description,
+                Priority = Todo.Priority,
+                DueDate = Todo.DueDate,
+                CategoryId = Todo.CategoryId,
+                Tags = Todo.Tags
+            };
+            _dueDate = Todo.DueDate;
+        }
+    }
+
+    private async Task Submit()
+    {
+        await _form.ValidateAsync();
+        if (!_isValid) return;
+
+        _isLoading = true;
+        try
+        {
+            _model.DueDate = _dueDate;
+            var result = await ApiService.UpdateTodoAsync(Todo.Id, _model);
+            if (result is not null)
+            {
+                Snackbar.Add("Todo updated!", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else Snackbar.Add("Failed to update todo.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"EditTodo error: {ex.Message}");
+            Snackbar.Add("An error occurred.", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
 }

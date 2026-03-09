@@ -8,6 +8,7 @@ namespace TodoApp.Web.Services
         // Auth
         Task<AuthResponse?> LoginAsync(LoginModel model);
         Task<AuthResponse?> RegisterAsync(RegisterModel model);
+        Task<bool> ChangePasswordAsync(ChangePasswordModel model);
 
         // Todos
         Task<PaginatedResult<TodoItemModel>?> GetTodosAsync(
@@ -23,5 +24,8 @@ namespace TodoApp.Web.Services
         // Categories
         Task<List<CategoryModel>?> GetCategoriesAsync();
         Task<CategoryModel?> CreateCategoryAsync(string name, string color, string? icon);
+        Task<bool> DeleteCategoryAsync(Guid id);
+        Task<bool> UpdateCategoryAsync(Guid id, string name, string? description,
+            string color, string? icon);        
     }
 }

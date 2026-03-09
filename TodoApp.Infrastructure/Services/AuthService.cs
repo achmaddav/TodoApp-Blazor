@@ -71,12 +71,28 @@ namespace TodoApp.Infrastructure.Services
             var expiresAt = DateTime.UtcNow.AddHours(
                 double.Parse(_config["Jwt:ExpiryHours"] ?? "24"));
 
-            return new AuthResponseDto(
-                Token: token,
-                RefreshToken: refreshToken,
-                ExpiresAt: expiresAt,
-                User: new UserDto(user.Id, user.FullName, user.Email, user.LastLoginAt)
-            );
+            // LAMA - record constructor syntax
+            // return new AuthResponseDto(
+            //     Token: token,
+            //     RefreshToken: refreshToken,
+            //     ExpiresAt: expiresAt,
+            //     User: new UserDto(user.Id, user.FullName, user.Email, user.LastLoginAt)
+            // );
+
+            // BARU - object initializer syntax
+            return new AuthResponseDto
+            {
+                Token = token,
+                RefreshToken = refreshToken,
+                ExpiresAt = expiresAt,
+                User = new UserDto
+                {
+                    Id = user.Id,
+                    FullName = user.FullName,
+                    Email = user.Email,
+                    LastLoginAt = user.LastLoginAt
+                }
+            };
         }
 
         private string GenerateJwtToken(User user)
@@ -86,11 +102,11 @@ namespace TodoApp.Infrastructure.Services
 
             var claims = new[]
             {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Name, user.FullName),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Name, user.FullName),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
 
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],

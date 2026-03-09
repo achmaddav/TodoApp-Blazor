@@ -1,0 +1,118 @@
+﻿@using TodoApp.Web.Models
+@using TodoApp.Web.Services
+@inject IApiService ApiService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="_isValid">
+            <MudTextField @bind-Value="_name" Label="Category Name"
+                          Variant="Variant.Outlined" Required="true" Class="mb-4" />
+
+            <MudTextField @bind-Value="_description" Label="Description"
+                          Variant="Variant.Outlined" Lines="2" Class="mb-4" />
+
+            <MudText Typo="Typo.body2" Class="mb-2">Color</MudText>
+            <div class="d-flex flex-wrap" style="gap:8px; margin-bottom:16px;">
+                @foreach (var color in _colors)
+                {
+                    <div @onclick="@(() => _selectedColor = color)"
+                         style="@GetColorSwatchStyle(color)">
+                        @if (_selectedColor == color)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Check"
+                                     Style="color:white; font-size:16px;" />
+                        }
+                    </div>
+                }
+            </div>
+
+            <MudTextField @bind-Value="_selectedColor" Label="Custom Color (hex)"
+                          Variant="Variant.Outlined" Class="mb-4"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.ColorLens" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   OnClick="Submit" Disabled="_isLoading">
+            @if (_isLoading)
+            {
+                <MudProgressCircular Size="Size.Small"
+                                     Indeterminate="true" Class="mr-2" />
+            }
+            @(_isEdit ? "Update" : "Create")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public CategoryModel? Category { get; set; }
+
+    private MudForm _form = null!;
+    private bool _isValid, _isLoading;
+    private bool _isEdit => Category is not null;
+
+    private string _name = string.Empty;
+    private string _description = string.Empty;
+    private string _selectedColor = "#6366F1";
+
+    private readonly List<string> _colors = new()
+    {
+        "#6366F1", "#8B5CF6", "#EC4899", "#EF4444",
+        "#F59E0B", "#10B981", "#3B82F6", "#14B8A6"
+    };
+
+    protected override void OnParametersSet()
+    {
+        if (Category is not null)
+        {
+            _name = Category.Name;
+            _description = Category.Description ?? string.Empty;
+            _selectedColor = Category.Color;
+        }
+    }
+
+    private async Task Submit()
+    {
+        await _form.Validate();
+        if (!_isValid) return;
+
+        _isLoading = true;
+        try
+        {
+            if (_isEdit)
+            {
+                var success = await ApiService.UpdateCategoryAsync(
+                    Category!.Id, _name, _description, _selectedColor, null);
+                if (success)
+                {
+                    Snackbar.Add("Category updated!", Severity.Success);
+                    MudDialog.Close(DialogResult.Ok(true));
+                }
+                else Snackbar.Add("Failed to update.", Severity.Error);
+            }
+            else
+            {
+                var result = await ApiService.CreateCategoryAsync(
+                    _name, _selectedColor, null);
+                if (result is not null)
+                {
+                    Snackbar.Add("Category created!", Severity.Success);
+                    MudDialog.Close(DialogResult.Ok(true));
+                }
+                else Snackbar.Add("Failed to create.", Severity.Error);
+            }
+        }
+        finally { _isLoading = false; }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private string GetColorSwatchStyle(string color) =>
+        $"width:32px; height:32px; border-radius:50%; background:{color}; " +
+        $"cursor:pointer; display:flex; align-items:center; justify-content:center; " +
+        $"border: {(_selectedColor == color ? "3px solid #333" : "2px solid transparent")};";
+}

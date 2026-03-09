@@ -1,73 +1,276 @@
 ﻿@page "/register"
+@rendermode InteractiveServer
 @layout EmptyLayout
+@using MudBlazor
+@using TodoApp.Web.Auth
+@using TodoApp.Web.Components.Layout
+@using TodoApp.Web.Models
+@using TodoApp.Web.Services
 @inject IApiService ApiService
 @inject CustomAuthStateProvider AuthProvider
 @inject NavigationManager Nav
 
-<MudContainer MaxWidth="MaxWidth.Small" Class="mt-10">
-    <MudPaper Elevation="8" Class="pa-8" Style="border-radius:16px;">
+<div class="register-wrapper">
 
-        <div class="d-flex flex-column align-center mb-6">
-            <MudIcon Icon="@Icons.Material.Filled.PersonAdd"
-                     Color="Color.Primary" Style="font-size:3rem;" />
-            <MudText Typo="Typo.h4" Class="mt-2 font-weight-bold">Create Account</MudText>
+    <!-- Left Side - Branding -->
+    <div class="register-left d-none d-md-flex">
+        <div class="d-flex flex-column align-center justify-center" style="gap:24px;">
+            <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                     Style="font-size:5rem; color:white;" />
+            <MudText Typo="Typo.h3" Class="font-weight-bold"
+                     Style="color:white;">TodoApp</MudText>
+            <MudText Typo="Typo.h6"
+                     Style="color:rgba(255,255,255,0.8); text-align:center; max-width:300px;">
+                Start organizing your life today
+            </MudText>
+
+            <div class="d-flex flex-column" style="gap:16px; margin-top:16px;">
+                @foreach (var feature in _features)
+                {
+                    <div class="d-flex align-center" style="gap:12px;">
+                        <MudAvatar Style="background:rgba(255,255,255,0.2);
+                                color:white;" Size="Size.Small">
+                            <MudIcon Icon="@feature.Icon" Size="Size.Small" />
+                        </MudAvatar>
+                        <MudText Style="color:rgba(255,255,255,0.9);">
+                            @feature.Text
+                        </MudText>
+                    </div>
+                }
+            </div>
         </div>
+    </div>
 
-        <MudForm @ref="_form" @bind-IsValid="_isValid">
-            <MudTextField @bind-Value="_model.FullName"
-                Label="Full Name" Variant="Variant.Outlined"
-                Adornment="Adornment.Start"
-                AdornmentIcon="@Icons.Material.Filled.Person"
-                Required="true" Class="mb-4" />
+    <!-- Right Side - Register Form -->
+    <div class="register-right">
+        <div class="register-form-container">
 
-            <MudTextField @bind-Value="_model.Email"
-                Label="Email Address" InputType="InputType.Email"
-                Variant="Variant.Outlined"
-                Adornment="Adornment.Start"
-                AdornmentIcon="@Icons.Material.Filled.Email"
-                Required="true" Class="mb-4" />
+            <!-- Mobile Logo -->
+            <div class="d-flex d-md-none flex-column align-center mb-6">
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                         Color="Color.Primary" Style="font-size:3rem;" />
+                <MudText Typo="Typo.h5" Class="mt-2 font-weight-bold">TodoApp</MudText>
+            </div>
 
-            <MudTextField @bind-Value="_model.Password"
-                Label="Password" InputType="InputType.Password"
-                Variant="Variant.Outlined"
-                Adornment="Adornment.Start"
-                AdornmentIcon="@Icons.Material.Filled.Lock"
-                Required="true" Class="mb-4" />
+            <!-- Title -->
+            <MudText Typo="Typo.h4" Class="font-weight-bold mb-2">
+                Create Account 🚀
+            </MudText>
+            <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-6">
+                Join us and start managing your tasks
+            </MudText>
 
-            <MudTextField @bind-Value="_model.ConfirmPassword"
-                Label="Confirm Password" InputType="InputType.Password"
-                Variant="Variant.Outlined"
-                Adornment="Adornment.Start"
-                AdornmentIcon="@Icons.Material.Filled.Lock"
-                Required="true" Class="mb-4" />
-
+            <!-- Error Alert -->
             @if (!string.IsNullOrEmpty(_errorMessage))
             {
-                <MudAlert Severity="Severity.Error" Class="mb-4">
+                <MudAlert Severity="Severity.Error" Class="mb-4"
+                          Variant="Variant.Filled" Dense="true">
                     @_errorMessage
                 </MudAlert>
             }
 
-            <MudButton FullWidth="true" Variant="Variant.Filled"
-                Color="Color.Primary" Size="Size.Large"
-                OnClick="HandleRegister" Disabled="_isLoading"
-                Style="border-radius:8px; height:48px;">
-                @if (_isLoading)
-                {
-                    <MudProgressCircular Size="Size.Small"
-                        Indeterminate="true" Class="mr-2" />
-                }
-                Create Account
-            </MudButton>
-        </MudForm>
+            <!-- Success Alert -->
+            @if (!string.IsNullOrEmpty(_successMessage))
+            {
+                <MudAlert Severity="Severity.Success" Class="mb-4"
+                          Variant="Variant.Filled" Dense="true">
+                    @_successMessage
+                </MudAlert>
+            }
 
-        <MudDivider Class="my-4" />
-        <div class="d-flex justify-center">
-            <MudText Typo="Typo.body2">Already have an account?</MudText>
-            <MudLink Href="/login" Class="ml-1">Sign In</MudLink>
+            <!-- Form -->
+            <MudForm @ref="_form" @bind-IsValid="_isValid">
+
+                <MudText Typo="Typo.body2" Class="font-weight-medium mb-1">
+                    Full Name
+                </MudText>
+                <MudTextField @bind-Value="_model.FullName"
+                              Placeholder="John Doe"
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Person"
+                              Required="true"
+                              FullWidth="true"
+                              Class="mb-4" />
+
+                <MudText Typo="Typo.body2" Class="font-weight-medium mb-1">
+                    Email Address
+                </MudText>
+                <MudTextField @bind-Value="_model.Email"
+                              Placeholder="you@example.com"
+                              InputType="InputType.Email"
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Email"
+                              Required="true"
+                              FullWidth="true"
+                              Class="mb-4" />
+
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudText Typo="Typo.body2" Class="font-weight-medium mb-1">
+                            Password
+                        </MudText>
+                        <MudTextField @bind-Value="_model.Password"
+                                      Placeholder="Min. 6 characters"
+                                      InputType="@_passwordType"
+                                      Variant="Variant.Outlined"
+                                      Adornment="Adornment.End"
+                                      AdornmentIcon="@_passwordIcon"
+                                      OnAdornmentClick="TogglePassword"
+                                      Required="true"
+                                      FullWidth="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudText Typo="Typo.body2" Class="font-weight-medium mb-1">
+                            Confirm Password
+                        </MudText>
+                        <MudTextField @bind-Value="_model.ConfirmPassword"
+                                      Placeholder="Repeat password"
+                                      InputType="@_confirmPasswordType"
+                                      Variant="Variant.Outlined"
+                                      Adornment="Adornment.End"
+                                      AdornmentIcon="@_confirmPasswordIcon"
+                                      OnAdornmentClick="ToggleConfirmPassword"
+                                      Required="true"
+                                      FullWidth="true" />
+                    </MudItem>
+                </MudGrid>
+
+                <!-- Password Match Indicator -->
+                @if (!string.IsNullOrEmpty(_model.Password)
+                                && !string.IsNullOrEmpty(_model.ConfirmPassword))
+                {
+                    <div class="d-flex align-center mt-2" style="gap:6px;">
+                        @if (_model.Password == _model.ConfirmPassword)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                                     Style="color:#10B981; font-size:18px;" />
+                            <MudText Typo="Typo.caption" Style="color:#10B981;">
+                                Passwords match
+                            </MudText>
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Cancel"
+                                     Style="color:#EF4444; font-size:18px;" />
+                            <MudText Typo="Typo.caption" Style="color:#EF4444;">
+                                Passwords do not match
+                            </MudText>
+                        }
+                    </div>
+                }
+
+                <MudButton FullWidth="true"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Size="Size.Large"
+                           OnClick="HandleRegister"
+                           Disabled="@(_isLoading || _model.Password != _model.ConfirmPassword)"
+                           Class="mt-6"
+                           Style="border-radius:10px; height:52px; font-size:1rem;">
+                    @if (_isLoading)
+                    {
+                        <MudProgressCircular Size="Size.Small"
+                                             Indeterminate="true" Class="mr-2" />
+                        <span>Creating account...</span>
+                    }
+                    else
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.PersonAdd"
+                                 Class="mr-2" Size="Size.Small" />
+                        <span>Create Account</span>
+                    }
+                </MudButton>
+            </MudForm>
+
+            <MudDivider Class="my-6" />
+
+            <div class="d-flex justify-center align-center" style="gap:6px;">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Already have an account?
+                </MudText>
+                <MudLink Href="/login" Typo="Typo.body2"
+                         Style="color:#6366F1; font-weight:600;">
+                    Sign In
+                </MudLink>
+            </div>
+
         </div>
-    </MudPaper>
-</MudContainer>
+    </div>
+</div>
+
+<style>
+    .register-wrapper {
+        display: flex;
+        min-height: 100vh;
+        background: #F8FAFC;
+    }
+
+    .register-left {
+        flex: 1;
+        background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 60%, #EC4899 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 48px;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .register-left::before {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            top: -100px;
+            right: -100px;
+        }
+
+        .register-left::after {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            bottom: -80px;
+            left: -80px;
+        }
+
+    .register-right {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 24px;
+        background: #FFFFFF;
+    }
+
+    .register-form-container {
+        width: 100%;
+        max-width: 480px;
+    }
+
+    @@media (max-width: 960px) {
+        .register-left {
+            display: none !important;
+        }
+
+        .register-right {
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+        }
+
+        .register-form-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 32px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+        }
+    }
+</style>
 
 @code {
     private MudForm _form = null!;
@@ -75,10 +278,51 @@
     private bool _isValid;
     private bool _isLoading;
     private string _errorMessage = string.Empty;
+    private string _successMessage = string.Empty;
+    private InputType _passwordType = InputType.Password;
+    private string _passwordIcon = Icons.Material.Filled.VisibilityOff;
+    private InputType _confirmPasswordType = InputType.Password;
+    private string _confirmPasswordIcon = Icons.Material.Filled.VisibilityOff;
+
+    private readonly List<(string Icon, string Text)> _features = new()
+    {
+        (Icons.Material.Filled.CheckCircle,  "Track all your tasks in one place"),
+        (Icons.Material.Filled.Category,     "Organize with categories"),
+        (Icons.Material.Filled.Notifications,"Get reminded before due dates"),
+        (Icons.Material.Filled.BarChart,     "Monitor your productivity"),
+    };
+
+    private void TogglePassword()
+    {
+        if (_passwordType == InputType.Password)
+        {
+            _passwordType = InputType.Text;
+            _passwordIcon = Icons.Material.Filled.Visibility;
+        }
+        else
+        {
+            _passwordType = InputType.Password;
+            _passwordIcon = Icons.Material.Filled.VisibilityOff;
+        }
+    }
+
+    private void ToggleConfirmPassword()
+    {
+        if (_confirmPasswordType == InputType.Password)
+        {
+            _confirmPasswordType = InputType.Text;
+            _confirmPasswordIcon = Icons.Material.Filled.Visibility;
+        }
+        else
+        {
+            _confirmPasswordType = InputType.Password;
+            _confirmPasswordIcon = Icons.Material.Filled.VisibilityOff;
+        }
+    }
 
     private async Task HandleRegister()
     {
-        await _form.Validate();
+        await _form.ValidateAsync();
         if (!_isValid) return;
 
         if (_model.Password != _model.ConfirmPassword)
@@ -88,21 +332,35 @@
         }
 
         _isLoading = true;
+        _errorMessage = string.Empty;
+        StateHasChanged();
+
         try
         {
             var result = await ApiService.RegisterAsync(_model);
-            if (result is null)
+            if (result is null || string.IsNullOrEmpty(result.Token))
             {
                 _errorMessage = "Registration failed. Email may already exist.";
                 return;
             }
+
+            _successMessage = "Account created successfully! Redirecting...";
+            StateHasChanged();
+
             await AuthProvider.MarkAsAuthenticatedAsync(result.Token);
-            Nav.NavigateTo("/", true);
+            await Task.Delay(500);
+
+            Nav.NavigateTo("/dashboard", forceLoad: false);
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"Register Error: {ex.Message}");
             _errorMessage = "An error occurred. Please try again.";
         }
-        finally { _isLoading = false; }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
     }
 }

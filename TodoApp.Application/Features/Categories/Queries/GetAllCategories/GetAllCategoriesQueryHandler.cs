@@ -16,11 +16,21 @@ namespace TodoApp.Application.Features.Categories.Queries.GetAllCategories
         { _uow = uow; _mapper = mapper; }
 
         public async Task<Result<List<TodoCategoryDto>>> Handle(
-            GetAllCategoriesQuery request, CancellationToken ct)
+    GetAllCategoriesQuery request, CancellationToken ct)
         {
-            var categories = await _uow.Categories.GetAllWithCountAsync(ct);
-            var dtos = _mapper.Map<List<TodoCategoryDto>>(categories);
-            return Result<List<TodoCategoryDto>>.Success(dtos);
+            try
+            {
+                var categories = await _uow.Categories.GetAllWithCountAsync(ct);
+                var dtos = _mapper.Map<List<TodoCategoryDto>>(categories);
+                return Result<List<TodoCategoryDto>>.Success(dtos);
+            }
+            catch (Exception ex)
+            {
+                // Tambahkan ini untuk debug
+                Console.WriteLine($"GetAllCategories Error: {ex.Message}");
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
+                throw;
+            }
         }
     }
 }

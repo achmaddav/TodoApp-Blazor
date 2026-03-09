@@ -20,6 +20,7 @@ namespace TodoApp.Domain.Interfaces.Repositories
         // Command
         Task<T> AddAsync(T entity, CancellationToken ct = default);
         Task AddRangeAsync(IEnumerable<T> entities, CancellationToken ct = default);
+        Task UpdateAsync(T entity, CancellationToken ct = default);
         void Update(T entity);
         void Remove(T entity);
         void RemoveRange(IEnumerable<T> entities);

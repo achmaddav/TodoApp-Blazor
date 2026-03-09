@@ -1,14 +1,44 @@
 ﻿<MudNavMenu>
-    <MudNavLink Href="/" Match="NavLinkMatch.All"
-        Icon="@Icons.Material.Filled.Dashboard">
+    <MudText Typo="Typo.caption" Class="px-3 mt-2 mb-1"
+        Style="color:rgba(255,255,255,0.35);
+            letter-spacing:1.5px; font-size:0.65rem;">
+        MAIN MENU
+    </MudText>
+
+    <MudNavLink Href="/dashboard"
+        Match="NavLinkMatch.All"
+        Icon="@Icons.Material.Filled.Dashboard"
+        Style="color:rgba(255,255,255,0.85); border-radius:10px;">
         Dashboard
     </MudNavLink>
+
     <MudNavLink Href="/todos"
-        Icon="@Icons.Material.Filled.CheckCircle">
+        Match="NavLinkMatch.Prefix"
+        Icon="@Icons.Material.Filled.CheckCircle"
+        Style="color:rgba(255,255,255,0.85); border-radius:10px;">
         My Todos
     </MudNavLink>
+
     <MudNavLink Href="/categories"
-        Icon="@Icons.Material.Filled.Category">
+        Match="NavLinkMatch.Prefix"
+        Icon="@Icons.Material.Filled.Category"
+        Style="color:rgba(255,255,255,0.85); border-radius:10px;">
         Categories
+    </MudNavLink>
+
+    <MudDivider Class="my-3"
+        Style="background:rgba(255,255,255,0.08);" />
+
+    <MudText Typo="Typo.caption" Class="px-3 mb-1"
+        Style="color:rgba(255,255,255,0.35);
+            letter-spacing:1.5px; font-size:0.65rem;">
+        ACCOUNT
+    </MudText>
+
+    <MudNavLink Href="/settings"
+        Match="NavLinkMatch.Prefix"
+        Icon="@Icons.Material.Filled.Settings"
+        Style="color:rgba(255,255,255,0.85); border-radius:10px;">
+        Settings
     </MudNavLink>
 </MudNavMenu>

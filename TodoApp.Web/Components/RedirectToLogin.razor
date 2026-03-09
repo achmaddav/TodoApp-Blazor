@@ -2,15 +2,23 @@
 @inject AuthenticationStateProvider AuthProvider
 
 @code {
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var authState = await AuthProvider.GetAuthenticationStateAsync();
-        if (!authState.User.Identity?.IsAuthenticated ?? true)
+        if (firstRender)
         {
-            var currentUrl = Nav.Uri;
-            var returnUrl = Uri.EscapeDataString(
-                new Uri(currentUrl).PathAndQuery);
-            Nav.NavigateTo($"/login?ReturnUrl={returnUrl}");
+            var authState = await AuthProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated == true)
+            {
+                // Sudah login, ke dashboard
+                Nav.NavigateTo("/dashboard", forceLoad: false);
+            }
+            else
+            {
+                // Belum login, ke login page
+                var currentPath = new Uri(Nav.Uri).PathAndQuery;
+                var returnUrl = Uri.EscapeDataString(currentPath);
+                Nav.NavigateTo($"/login?ReturnUrl={returnUrl}", forceLoad: false);
+            }
         }
     }
 }

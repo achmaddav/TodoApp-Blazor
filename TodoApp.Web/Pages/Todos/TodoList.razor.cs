@@ -102,22 +102,33 @@ public partial class TodoList
 
     private async Task OpenCreateDialog()
     {
-        var categories = await ApiService.GetCategoriesAsync() ?? new();
-        var parameters = new DialogParameters
+        try
         {
-            ["Categories"] = categories
-        };
-        var dialog = await DialogService.ShowAsync<CreateTodoDialog>(
-            "New Todo", parameters,
-            new DialogOptions
-            {
-                MaxWidth = MaxWidth.Small,
-                FullWidth = true,
-                CloseButton = true
-            });
+            var categories = await ApiService.GetCategoriesAsync() ?? new();
 
-        var result = await dialog.Result;
-        if (!result.Canceled) await LoadTodosAsync();
+            var parameters = new DialogParameters
+            {
+                ["Categories"] = categories
+            };
+
+            var dialog = await DialogService.ShowAsync<CreateTodoDialog>(
+                "New Todo", parameters,
+                new DialogOptions
+                {
+                    MaxWidth = MaxWidth.Small,
+                    FullWidth = true,
+                    CloseButton = true
+                });
+
+            var result = await dialog.Result;
+            if (result is not null && !result.Canceled)
+                await LoadTodosAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"OpenCreateDialog error: {ex.Message}");
+            Snackbar.Add("Failed to open dialog.", Severity.Error);
+        }
     }
 
     private async Task OpenEditDialog(TodoItemModel todo)

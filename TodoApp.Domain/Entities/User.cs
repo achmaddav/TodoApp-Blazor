@@ -23,6 +23,11 @@ namespace TodoApp.Domain.Entities
             PasswordHash = passwordHash;
         }
 
+        public void UpdatePassword(string newPasswordHash)
+        {
+            PasswordHash = newPasswordHash;
+        }
+
         public void UpdateProfile(string fullName)
         {
             SetFullName(fullName);

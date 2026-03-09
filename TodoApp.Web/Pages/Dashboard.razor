@@ -1,5 +1,502 @@
-﻿<h3>Dashboard</h3>
+﻿@page "/"
+@page "/dashboard"
+@rendermode InteractiveServer
+@namespace TodoApp.Web.Pages
+@inject IApiService ApiService
+@inject NavigationManager Nav      
+
+<PageTitle>Dashboard</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+
+    <!-- Header -->
+    <div class="d-flex justify-space-between align-center mb-6">
+        <div>
+            <MudText Typo="Typo.h4" Class="font-weight-bold">Dashboard</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                @DateTime.Now.ToString("dddd, MMMM dd yyyy")
+            </MudText>
+        </div>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   Href="/todos" Style="border-radius:8px;">
+            Manage Todos
+        </MudButton>
+    </div>
+
+    @if (_isLoading)
+    {
+        <div class="d-flex justify-center mt-8">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+        </div>
+    }
+    else
+    {
+        <!-- Stats Cards -->
+        <MudGrid Class="mb-6">
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Elevation="3" Class="pa-4"
+                          Style="border-radius:12px; border-top:4px solid #6366F1;">
+                    <div class="d-flex justify-space-between align-center">
+                        <div>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                TOTAL TODOS
+                            </MudText>
+                            <MudText Typo="Typo.h3" Class="font-weight-bold"
+                                     Style="color:#6366F1;">
+                                @_totalTodos
+                            </MudText>
+                        </div>
+                        <MudAvatar Style="background:#6366F122; color:#6366F1;"
+                                   Size="Size.Large">
+                            <MudIcon Icon="@Icons.Material.Filled.List"
+                                     Size="Size.Medium" />
+                        </MudAvatar>
+                    </div>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
+                        @_completionRate% completion rate
+                    </MudText>
+                    <MudProgressLinear Value="@_completionRate"
+                                       Color="Color.Primary" Rounded="true" Class="mt-1" />
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Elevation="3" Class="pa-4"
+                          Style="border-radius:12px; border-top:4px solid #F59E0B;">
+                    <div class="d-flex justify-space-between align-center">
+                        <div>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                PENDING
+                            </MudText>
+                            <MudText Typo="Typo.h3" Class="font-weight-bold"
+                                     Style="color:#F59E0B;">
+                                @_pendingCount
+                            </MudText>
+                        </div>
+                        <MudAvatar Style="background:#F59E0B22; color:#F59E0B;"
+                                   Size="Size.Large">
+                            <MudIcon Icon="@Icons.Material.Filled.Schedule"
+                                     Size="Size.Medium" />
+                        </MudAvatar>
+                    </div>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
+                        Waiting to be started
+                    </MudText>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Elevation="3" Class="pa-4"
+                          Style="border-radius:12px; border-top:4px solid #3B82F6;">
+                    <div class="d-flex justify-space-between align-center">
+                        <div>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                IN PROGRESS
+                            </MudText>
+                            <MudText Typo="Typo.h3" Class="font-weight-bold"
+                                     Style="color:#3B82F6;">
+                                @_inProgressCount
+                            </MudText>
+                        </div>
+                        <MudAvatar Style="background:#3B82F622; color:#3B82F6;"
+                                   Size="Size.Large">
+                            <MudIcon Icon="@Icons.Material.Filled.Autorenew"
+                                     Size="Size.Medium" />
+                        </MudAvatar>
+                    </div>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
+                        Currently working on
+                    </MudText>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Elevation="3" Class="pa-4"
+                          Style="border-radius:12px; border-top:4px solid #10B981;">
+                    <div class="d-flex justify-space-between align-center">
+                        <div>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                COMPLETED
+                            </MudText>
+                            <MudText Typo="Typo.h3" Class="font-weight-bold"
+                                     Style="color:#10B981;">
+                                @_completedCount
+                            </MudText>
+                        </div>
+                        <MudAvatar Style="background:#10B98122; color:#10B981;"
+                                   Size="Size.Large">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                                     Size="Size.Medium" />
+                        </MudAvatar>
+                    </div>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
+                        Successfully done
+                    </MudText>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        <!-- Charts Row -->
+        <MudGrid Class="mb-6">
+
+            <!-- Status Overview -->
+            <MudItem xs="12" md="4">
+                <MudPaper Elevation="3" Class="pa-4"
+                          Style="border-radius:12px; height:300px;">
+                    <MudText Typo="Typo.h6" Class="font-weight-bold mb-4">
+                        Status Overview
+                    </MudText>
+                    <div class="d-flex flex-column align-center justify-center"
+                         style="height:220px;">
+                        <div style="position:relative; width:160px; height:160px;">
+                            <svg viewBox="0 0 36 36"
+                                 style="width:160px; height:160px; transform:rotate(-90deg)">
+                                <circle cx="18" cy="18" r="15.9"
+                                        fill="none" stroke="#f0f0f0" stroke-width="3" />
+                                <circle cx="18" cy="18" r="15.9"
+                                        fill="none" stroke="#10B981" stroke-width="3"
+                                        stroke-dasharray="@(GetDonutDash(_completedCount)) 100"
+                                        stroke-linecap="round" />
+                            </svg>
+                            <div style="position:absolute; top:50%; left:50%;
+                                    transform:translate(-50%,-50%); text-align:center;">
+                                <MudText Typo="Typo.h5" Class="font-weight-bold"
+                                         Style="color:#10B981;">
+                                    @_completionRate%
+                                </MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    Done
+                                </MudText>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap justify-center mt-2"
+                             style="gap:12px;">
+                            @foreach (var item in _statusSummary)
+                            {
+                                <div class="d-flex align-center" style="gap:4px;">
+                                    <div style="width:10px; height:10px;
+                                                border-radius:50%;
+                                                background:@item.Color;">
+                                    </div>
+                                    <MudText Typo="Typo.caption">
+                                        @item.Label (@item.Count)
+                                    </MudText>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </MudPaper>
+            </MudItem>
+
+            <!-- Priority Breakdown -->
+            <MudItem xs="12" md="4">
+                <MudPaper Elevation="3" Class="pa-4"
+                          Style="border-radius:12px; height:300px;">
+                    <MudText Typo="Typo.h6" Class="font-weight-bold mb-4">
+                        By Priority
+                    </MudText>
+                    <div class="d-flex flex-column" style="gap:16px;">
+                        @foreach (var item in _prioritySummary)
+                        {
+                            <div>
+                                <div class="d-flex justify-space-between mb-1">
+                                    <MudText Typo="Typo.body2">@item.Label</MudText>
+                                    <MudText Typo="Typo.body2" Class="font-weight-bold">
+                                        @item.Count
+                                    </MudText>
+                                </div>
+                                <MudProgressLinear Value="@GetPercentage(item.Count)"
+                                                   Style="height:8px; border-radius:4px;"
+                                                   Color="Color.Primary" Rounded="true" />
+                            </div>
+                        }
+                    </div>
+                </MudPaper>
+            </MudItem>
+
+            <!-- Category Breakdown -->
+            <MudItem xs="12" md="4">
+                <MudPaper Elevation="3" Class="pa-4"
+                          Style="border-radius:12px; height:300px; overflow-y:auto;">
+                    <MudText Typo="Typo.h6" Class="font-weight-bold mb-4">
+                        By Category
+                    </MudText>
+                    <div class="d-flex flex-column" style="gap:10px;">
+                        @foreach (var item in _categorySummary)
+                        {
+                            <div class="d-flex align-center justify-space-between">
+                                <div class="d-flex align-center" style="gap:8px;">
+                                    <div style="width:12px; height:12px;
+                                                border-radius:3px; background:@item.Color;">
+                                    </div>
+                                    <MudText Typo="Typo.body2">@item.Label</MudText>
+                                </div>
+                                <MudChip T="string" Size="Size.Small"
+                                         Style="@($"background:{item.Color}22; color:{item.Color}; height:20px;")">
+                                    @item.Count
+                                </MudChip>
+                            </div>
+                        }
+                    </div>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        <!-- Overdue & Due Soon -->
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudPaper Elevation="3" Class="pa-4" Style="border-radius:12px;">
+                    <div class="d-flex align-center mb-4" style="gap:8px;">
+                        <MudIcon Icon="@Icons.Material.Filled.Warning"
+                                 Color="Color.Error" />
+                        <MudText Typo="Typo.h6" Class="font-weight-bold">
+                            Overdue
+                        </MudText>
+                        <MudChip T="string" Size="Size.Small" Color="Color.Error">
+                            @_overdueTodos.Count
+                        </MudChip>
+                    </div>
+                    @if (!_overdueTodos.Any())
+                    {
+                        <div class="d-flex flex-column align-center pa-4">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                                     Style="font-size:2.5rem; color:#10B981;" />
+                            <MudText Typo="Typo.body2" Color="Color.Secondary"
+                                     Class="mt-2">
+                                No overdue todos!
+                            </MudText>
+                        </div>
+                    }
+                    else
+                    {
+                        <MudList T="string" Dense="true">
+                            @foreach (var todo in _overdueTodos.Take(5))
+                            {
+                                <MudListItem T="string">
+                                    <div class="d-flex justify-space-between align-center">
+                                        <div>
+                                            <MudText Typo="Typo.body2"
+                                                     Class="font-weight-medium">
+                                                @todo.Title
+                                            </MudText>
+                                            <MudText Typo="Typo.caption"
+                                                     Color="Color.Error">
+                                                Due: @todo.DueDate?.ToString("MMM dd, yyyy")
+                                            </MudText>
+                                        </div>
+                                        <MudChip T="string" Size="Size.Small"
+                                                 Style="@GetPriorityChipStyle(todo.Priority)">
+                                            @todo.PriorityLabel
+                                        </MudChip>
+                                    </div>
+                                </MudListItem>
+                                <MudDivider />
+                            }
+                        </MudList>
+                        @if (_overdueTodos.Count > 5)
+                        {
+                            <MudButton Variant="Variant.Text" Color="Color.Primary"
+                                       FullWidth="true" Href="/todos">
+                                View all @_overdueTodos.Count overdue
+                            </MudButton>
+                        }
+                    }
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudPaper Elevation="3" Class="pa-4" Style="border-radius:12px;">
+                    <div class="d-flex align-center mb-4" style="gap:8px;">
+                        <MudIcon Icon="@Icons.Material.Filled.AccessTime"
+                                 Color="Color.Warning" />
+                        <MudText Typo="Typo.h6" Class="font-weight-bold">
+                            Due Soon
+                        </MudText>
+                        <MudChip T="string" Size="Size.Small" Color="Color.Warning">
+                            @_dueSoonTodos.Count
+                        </MudChip>
+                    </div>
+                    @if (!_dueSoonTodos.Any())
+                    {
+                        <div class="d-flex flex-column align-center pa-4">
+                            <MudIcon Icon="@Icons.Material.Filled.EventAvailable"
+                                     Style="font-size:2.5rem; color:#6366F1;" />
+                            <MudText Typo="Typo.body2" Color="Color.Secondary"
+                                     Class="mt-2">
+                                Nothing due in the next 3 days!
+                            </MudText>
+                        </div>
+                    }
+                    else
+                    {
+                        <MudList T="string" Dense="true">
+                            @foreach (var todo in _dueSoonTodos.Take(5))
+                            {
+                                <MudListItem T="string">
+                                    <div class="d-flex justify-space-between align-center">
+                                        <div>
+                                            <MudText Typo="Typo.body2"
+                                                     Class="font-weight-medium">
+                                                @todo.Title
+                                            </MudText>
+                                            <MudText Typo="Typo.caption"
+                                                     Color="Color.Warning">
+                                                Due: @todo.DueDate?.ToString("MMM dd, yyyy")
+                                            </MudText>
+                                        </div>
+                                        <MudChip T="string" Size="Size.Small"
+                                                 Style="@GetPriorityChipStyle(todo.Priority)">
+                                            @todo.PriorityLabel
+                                        </MudChip>
+                                    </div>
+                                </MudListItem>
+                                <MudDivider />
+                            }
+                        </MudList>
+                        @if (_dueSoonTodos.Count > 5)
+                        {
+                            <MudButton Variant="Variant.Text" Color="Color.Primary"
+                                       FullWidth="true" Href="/todos">
+                                View all @_dueSoonTodos.Count due soon
+                            </MudButton>
+                        }
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+
+</MudContainer>
 
 @code {
 
+    [Inject] private AuthenticationStateProvider AuthStateProvider { get; set; } = null!;
+    private bool _isLoading = true;
+    private List<TodoItemModel> _allTodos = new();
+
+    private int _totalTodos, _pendingCount, _inProgressCount,
+                _completedCount, _completionRate;
+
+    private List<TodoItemModel> _overdueTodos = new();
+    private List<TodoItemModel> _dueSoonTodos = new();
+
+    private List<(string Label, int Count, string Color)> _statusSummary = new();
+    private List<(string Label, int Count)> _prioritySummary = new();
+    private List<(string Label, int Count, string Color)> _categorySummary = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
+
+            if (!isAuthenticated)
+            {
+                Nav.NavigateTo("/login", forceLoad: false);
+                return;
+            }
+
+            await LoadDashboardAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadDashboardAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            var result = await ApiService.GetTodosAsync(
+                status: null,
+                priority: null,
+                categoryId: null,
+                search: null,
+                page: 1,
+                pageSize: 200);
+
+            if (result is null) return;
+
+            _allTodos = result.Items;
+            CalculateStats();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Dashboard error: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void CalculateStats()
+    {
+        _totalTodos = _allTodos.Count;
+        _pendingCount = _allTodos.Count(t => t.Status == TodoStatus.Pending);
+        _inProgressCount = _allTodos.Count(t => t.Status == TodoStatus.InProgress);
+        _completedCount = _allTodos.Count(t => t.Status == TodoStatus.Completed);
+        _completionRate = _totalTodos > 0
+            ? (int)Math.Round((double)_completedCount / _totalTodos * 100) : 0;
+
+        var now = DateTime.Now;
+        _overdueTodos = _allTodos
+            .Where(t => t.IsOverdue)
+            .OrderBy(t => t.DueDate)
+            .ToList();
+
+        _dueSoonTodos = _allTodos
+            .Where(t => t.DueDate.HasValue
+                && t.DueDate.Value > now
+                && t.DueDate.Value <= now.AddDays(3)
+                && t.Status != TodoStatus.Completed
+                && t.Status != TodoStatus.Cancelled)
+            .OrderBy(t => t.DueDate)
+            .ToList();
+
+        _statusSummary = new()
+        {
+            ("Pending",     _pendingCount,    "#F59E0B"),
+            ("In Progress", _inProgressCount, "#3B82F6"),
+            ("Completed",   _completedCount,  "#10B981"),
+            ("Cancelled",   _allTodos.Count(t =>
+                t.Status == TodoStatus.Cancelled), "#9E9E9E"),
+        };
+
+        _prioritySummary = new()
+        {
+            ("Critical", _allTodos.Count(t => t.Priority == TodoPriority.Critical)),
+            ("High",     _allTodos.Count(t => t.Priority == TodoPriority.High)),
+            ("Medium",   _allTodos.Count(t => t.Priority == TodoPriority.Medium)),
+            ("Low",      _allTodos.Count(t => t.Priority == TodoPriority.Low)),
+        };
+
+        _categorySummary = _allTodos
+            .Where(t => t.CategoryName != null)
+            .GroupBy(t => new { t.CategoryName, t.CategoryColor })
+            .Select(g => (
+                Label: g.Key.CategoryName ?? "Uncategorized",
+                Count: g.Count(),
+                Color: g.Key.CategoryColor ?? "#6366F1"
+            ))
+            .OrderByDescending(x => x.Count)
+            .ToList();
+    }
+
+    private double GetDonutDash(int count)
+        => _totalTodos > 0 ? (double)count / _totalTodos * 100 : 0;
+
+    private double GetPercentage(int count)
+        => _totalTodos > 0 ? (double)count / _totalTodos * 100 : 0;
+
+    private static string GetPriorityChipStyle(TodoPriority priority) =>
+        priority switch
+        {
+            TodoPriority.Low => "background:#10B98122; color:#10B981; height:20px;",
+            TodoPriority.Medium => "background:#F59E0B22; color:#F59E0B; height:20px;",
+            TodoPriority.High => "background:#EF444422; color:#EF4444; height:20px;",
+            TodoPriority.Critical => "background:#7C3AED22; color:#7C3AED; height:20px;",
+            _ => "height:20px;"
+        };
 }

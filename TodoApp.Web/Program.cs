@@ -9,7 +9,10 @@ using TodoApp.Web.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents(options =>
+    {
+        options.DetailedErrors = true; // ← tambahkan ini
+    });
 
 // MudBlazor
 builder.Services.AddMudServices(config =>

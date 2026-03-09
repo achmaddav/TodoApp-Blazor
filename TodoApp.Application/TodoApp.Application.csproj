@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="12.0.1" />
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
     <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageReference Include="MediatR" Version="14.1.0" />
@@ -19,7 +20,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Features\Auth\Commands\" />
     <Folder Include="Features\Todos\Queries\GetTodosByStatus\" />
     <Folder Include="Mappings\" />
     <Folder Include="Validators\" />

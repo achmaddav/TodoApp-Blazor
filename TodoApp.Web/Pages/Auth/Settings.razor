@@ -1,0 +1,433 @@
+﻿@page "/settings"
+@rendermode InteractiveServer
+@namespace TodoApp.Web.Pages
+@using System.Security.Claims
+@inject IApiService ApiService
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Settings</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
+
+    <!-- Header -->
+    <div class="mb-6">
+        <MudText Typo="Typo.h4" Class="font-weight-bold">Settings</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            Manage your account preferences
+        </MudText>
+    </div>
+
+    <MudGrid>
+
+        <!-- Sidebar Menu -->
+        <MudItem xs="12" md="3">
+            <MudPaper Elevation="2" Style="border-radius:12px; overflow:hidden;">
+                <MudNavMenu>
+                    <MudNavLink Icon="@Icons.Material.Filled.Lock"
+                        Class="@GetMenuClass("password")"
+                        OnClick='() => _activeTab = "password"'>
+                        Change Password
+                    </MudNavLink>
+                    <MudNavLink Icon="@Icons.Material.Filled.Person"
+                        Class="@GetMenuClass("profile")"
+                        OnClick='() => _activeTab = "profile"'>
+                        Profile
+                    </MudNavLink>
+                </MudNavMenu>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Content -->
+        <MudItem xs="12" md="9">
+
+            <!-- Change Password -->
+            @if (_activeTab == "password")
+            {
+                <MudPaper Elevation="2" Class="pa-6"
+                    Style="border-radius:12px;">
+                    <div class="d-flex align-center mb-6" style="gap:12px;">
+                        <MudAvatar Style="background:#6366F122; color:#6366F1;">
+                            <MudIcon Icon="@Icons.Material.Filled.Lock" />
+                        </MudAvatar>
+                        <div>
+                            <MudText Typo="Typo.h6" Class="font-weight-bold">
+                                Change Password
+                            </MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                Update your password to keep your account secure
+                            </MudText>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(_successMessage))
+                    {
+                        <MudAlert Severity="Severity.Success"
+                            Variant="Variant.Filled"
+                            Dense="true" Class="mb-4"
+                            ShowCloseIcon="true"
+                            CloseIconClicked="() => _successMessage = string.Empty">
+                            @_successMessage
+                        </MudAlert>
+                    }
+
+                    @if (!string.IsNullOrEmpty(_errorMessage))
+                    {
+                        <MudAlert Severity="Severity.Error"
+                            Variant="Variant.Filled"
+                            Dense="true" Class="mb-4"
+                            ShowCloseIcon="true"
+                            CloseIconClicked="() => _errorMessage = string.Empty">
+                            @_errorMessage
+                        </MudAlert>
+                    }
+
+                    <MudForm @ref="_passwordForm" @bind-IsValid="_isPasswordValid">
+
+                        <MudText Typo="Typo.body2"
+                            Class="font-weight-medium mb-1">
+                            Current Password
+                        </MudText>
+                        <MudTextField @bind-Value="_passwordModel.CurrentPassword"
+                            Placeholder="Enter current password"
+                            InputType="@_currentPwType"
+                            Variant="Variant.Outlined"
+                            Adornment="Adornment.End"
+                            AdornmentIcon="@_currentPwIcon"
+                            OnAdornmentClick="ToggleCurrentPw"
+                            Required="true"
+                            FullWidth="true"
+                            Class="mb-4" />
+
+                        <MudText Typo="Typo.body2"
+                            Class="font-weight-medium mb-1">
+                            New Password
+                        </MudText>
+                        <MudTextField @bind-Value="_passwordModel.NewPassword"
+                            Placeholder="Min. 6 characters"
+                            InputType="@_newPwType"
+                            Variant="Variant.Outlined"
+                            Adornment="Adornment.End"
+                            AdornmentIcon="@_newPwIcon"
+                            OnAdornmentClick="ToggleNewPw"
+                            Required="true"
+                            FullWidth="true"
+                            Class="mb-4" />
+
+                        <MudText Typo="Typo.body2"
+                            Class="font-weight-medium mb-1">
+                            Confirm New Password
+                        </MudText>
+                        <MudTextField @bind-Value="_passwordModel.ConfirmPassword"
+                            Placeholder="Repeat new password"
+                            InputType="@_confirmPwType"
+                            Variant="Variant.Outlined"
+                            Adornment="Adornment.End"
+                            AdornmentIcon="@_confirmPwIcon"
+                            OnAdornmentClick="ToggleConfirmPw"
+                            Required="true"
+                            FullWidth="true"
+                            Class="mb-2" />
+
+                        <!-- Password Match Indicator -->
+                        @if (!string.IsNullOrEmpty(_passwordModel.NewPassword)
+                            && !string.IsNullOrEmpty(_passwordModel.ConfirmPassword))
+                        {
+                            <div class="d-flex align-center mb-4" style="gap:6px;">
+                                @if (_passwordModel.NewPassword ==
+                                    _passwordModel.ConfirmPassword)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                                        Style="color:#10B981; font-size:18px;" />
+                                    <MudText Typo="Typo.caption"
+                                        Style="color:#10B981;">
+                                        Passwords match
+                                    </MudText>
+                                }
+                                else
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Cancel"
+                                        Style="color:#EF4444; font-size:18px;" />
+                                    <MudText Typo="Typo.caption"
+                                        Style="color:#EF4444;">
+                                        Passwords do not match
+                                    </MudText>
+                                }
+                            </div>
+                        }
+
+                        <!-- Password Strength -->
+                        @if (!string.IsNullOrEmpty(_passwordModel.NewPassword))
+                        {
+                            <div class="mb-4">
+                                <div class="d-flex justify-space-between mb-1">
+                                    <MudText Typo="Typo.caption"
+                                        Color="Color.Secondary">
+                                        Password strength
+                                    </MudText>
+                                    <MudText Typo="Typo.caption"
+                                        Style="@($"color:{GetStrengthColor()};")">
+                                        @GetStrengthLabel()
+                                    </MudText>
+                                </div>
+                                <MudProgressLinear
+                                    Value="@GetStrengthValue()"
+                                    Style="@($"height:6px; border-radius:3px;")"
+                                    Color="@GetStrengthMudColor()"
+                                    Rounded="true" />
+                            </div>
+                        }
+
+                        <div class="d-flex justify-end mt-2">
+                            <MudButton Variant="Variant.Outlined"
+                                Color="Color.Default"
+                                OnClick="ResetPasswordForm"
+                                Class="mr-2"
+                                Style="border-radius:8px;">
+                                Cancel
+                            </MudButton>
+                            <MudButton Variant="Variant.Filled"
+                                Color="Color.Primary"
+                                OnClick="HandleChangePassword"
+                                Disabled="@(_isLoading ||
+                                    _passwordModel.NewPassword !=
+                                    _passwordModel.ConfirmPassword)"
+                                Style="border-radius:8px;">
+                                @if (_isLoading)
+                                {
+                                    <MudProgressCircular Size="Size.Small"
+                                        Indeterminate="true" Class="mr-2" />
+                                }
+                                Update Password
+                            </MudButton>
+                        </div>
+                    </MudForm>
+                </MudPaper>
+            }
+
+            <!-- Profile Tab -->
+            @if (_activeTab == "profile")
+            {
+                <MudPaper Elevation="2" Class="pa-6"
+                    Style="border-radius:12px;">
+                    <div class="d-flex align-center mb-6" style="gap:12px;">
+                        <MudAvatar Style="background:#10B98122; color:#10B981;">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" />
+                        </MudAvatar>
+                        <div>
+                            <MudText Typo="Typo.h6" Class="font-weight-bold">
+                                Profile Information
+                            </MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                Your account details
+                            </MudText>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-column align-center mb-6">
+                        <MudAvatar Style="background:linear-gradient(135deg,#6366F1,#8B5CF6);
+                            color:white; width:80px; height:80px;
+                            font-size:2rem; margin-bottom:12px;">
+                            @GetInitials(_userName)
+                        </MudAvatar>
+                        <MudText Typo="Typo.h6" Class="font-weight-bold">
+                            @_userName
+                        </MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">
+                            @_userEmail
+                        </MudText>
+                    </div>
+
+                    <MudDivider Class="mb-4" />
+
+                    <MudGrid>
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.caption"
+                                Color="Color.Secondary"
+                                Class="font-weight-medium">
+                                FULL NAME
+                            </MudText>
+                            <MudText Typo="Typo.body1"
+                                Class="font-weight-medium mt-1">
+                                @_userName
+                            </MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.caption"
+                                Color="Color.Secondary"
+                                Class="font-weight-medium">
+                                EMAIL ADDRESS
+                            </MudText>
+                            <MudText Typo="Typo.body1"
+                                Class="font-weight-medium mt-1">
+                                @_userEmail
+                            </MudText>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            }
+
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private string _activeTab = "password";
+    private MudForm _passwordForm = null!;
+    private bool _isPasswordValid;
+    private bool _isLoading;
+    private string _successMessage = string.Empty;
+    private string _errorMessage = string.Empty;
+    private string _userName = string.Empty;
+    private string _userEmail = string.Empty;
+
+    private ChangePasswordModel _passwordModel = new();
+
+    // Password visibility toggles
+    private InputType _currentPwType   = InputType.Password;
+    private string   _currentPwIcon   = Icons.Material.Filled.VisibilityOff;
+    private InputType _newPwType       = InputType.Password;
+    private string   _newPwIcon       = Icons.Material.Filled.VisibilityOff;
+    private InputType _confirmPwType   = InputType.Password;
+    private string   _confirmPwIcon   = Icons.Material.Filled.VisibilityOff;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            _userName = user.FindFirst(ClaimTypes.Name)?.Value
+                      ?? user.Identity?.Name
+                      ?? string.Empty;
+
+            _userEmail = user.FindFirst(ClaimTypes.Email)?.Value
+                      ?? string.Empty;
+
+            Console.WriteLine($"Claims: {string.Join(", ", user.Claims.Select(c => $"{c.Type}={c.Value}"))}");
+
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleChangePassword()
+    {
+        await _passwordForm.ValidateAsync();
+        if (!_isPasswordValid) return;
+
+        if (_passwordModel.NewPassword != _passwordModel.ConfirmPassword)
+        {
+            _errorMessage = "New passwords do not match.";
+            return;
+        }
+
+        _isLoading = true;
+        _errorMessage = string.Empty;
+        _successMessage = string.Empty;
+
+        try
+        {
+            var result = await ApiService.ChangePasswordAsync(_passwordModel);
+            if (result)
+            {
+                _successMessage = "Password updated successfully!";
+                ResetPasswordForm();
+            }
+            else
+            {
+                _errorMessage = "Current password is incorrect.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"ChangePassword error: {ex.Message}");
+            _errorMessage = "An error occurred. Please try again.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void ResetPasswordForm()
+    {
+        _passwordModel = new ChangePasswordModel();
+        _passwordForm?.ResetAsync();
+    }
+
+    private string GetMenuClass(string tab)
+        => _activeTab == tab ? "settings-menu-active" : "";
+
+    private static string GetInitials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "?";
+        var parts = name.Trim().Split(' ',
+            StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2
+            ? $"{parts[0][0]}{parts[1][0]}".ToUpper()
+            : name[..1].ToUpper();
+    }
+
+    // Password Strength
+    private int GetStrengthValue()
+    {
+        var pw = _passwordModel.NewPassword;
+        if (string.IsNullOrEmpty(pw)) return 0;
+        int score = 0;
+        if (pw.Length >= 6)  score += 25;
+        if (pw.Length >= 10) score += 25;
+        if (pw.Any(char.IsUpper) && pw.Any(char.IsLower)) score += 25;
+        if (pw.Any(char.IsDigit) || pw.Any(ch => !char.IsLetterOrDigit(ch)))
+            score += 25;
+        return score;
+    }
+
+    private string GetStrengthLabel() => GetStrengthValue() switch
+    {
+        <= 25 => "Weak",
+        <= 50 => "Fair",
+        <= 75 => "Good",
+        _     => "Strong"
+    };
+
+    private string GetStrengthColor() => GetStrengthValue() switch
+    {
+        <= 25 => "#EF4444",
+        <= 50 => "#F59E0B",
+        <= 75 => "#3B82F6",
+        _     => "#10B981"
+    };
+
+    private Color GetStrengthMudColor() => GetStrengthValue() switch
+    {
+        <= 25 => Color.Error,
+        <= 50 => Color.Warning,
+        <= 75 => Color.Info,
+        _     => Color.Success
+    };
+
+    private void ToggleCurrentPw()
+    {
+        (_currentPwType, _currentPwIcon) =
+            _currentPwType == InputType.Password
+                ? (InputType.Text, Icons.Material.Filled.Visibility)
+                : (InputType.Password, Icons.Material.Filled.VisibilityOff);
+    }
+
+    private void ToggleNewPw()
+    {
+        (_newPwType, _newPwIcon) =
+            _newPwType == InputType.Password
+                ? (InputType.Text, Icons.Material.Filled.Visibility)
+                : (InputType.Password, Icons.Material.Filled.VisibilityOff);
+    }
+
+    private void ToggleConfirmPw()
+    {
+        (_confirmPwType, _confirmPwIcon) =
+            _confirmPwType == InputType.Password
+                ? (InputType.Text, Icons.Material.Filled.Visibility)
+                : (InputType.Password, Icons.Material.Filled.VisibilityOff);
+    }
+}

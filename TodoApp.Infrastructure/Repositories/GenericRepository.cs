@@ -50,6 +50,12 @@ namespace TodoApp.Infrastructure.Repositories
         public async Task AddRangeAsync(IEnumerable<T> entities, CancellationToken ct = default)
             => await _dbSet.AddRangeAsync(entities, ct);
 
+        public async Task UpdateAsync(T entity, CancellationToken ct = default)
+        {
+            _context.Set<T>().Update(entity);
+            await Task.CompletedTask;
+        }
+
         public void Update(T entity)
             => _dbSet.Update(entity);
 

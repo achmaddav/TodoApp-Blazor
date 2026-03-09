@@ -1,28 +1,31 @@
-﻿namespace TodoApp.Application.DTOs
+﻿namespace TodoApp.Application.DTOs;
+
+public class UserDto
 {
-    public record UserDto(
-        Guid Id,
-        string FullName,
-        string Email,
-        DateTime? LastLoginAt
-    );
+    public Guid Id { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public DateTime? LastLoginAt { get; set; }
+}
 
-    public record RegisterDto(
-        string FullName,
-        string Email,
-        string Password,
-        string ConfirmPassword
-    );
+public class RegisterDto
+{
+    public string FullName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public string ConfirmPassword { get; set; } = string.Empty;
+}
 
-    public record LoginDto(
-        string Email,
-        string Password
-    );
+public class LoginDto
+{
+    public string Email { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+}
 
-    public record AuthResponseDto(
-        string Token,
-        string RefreshToken,
-        DateTime ExpiresAt,
-        UserDto User
-    );
+public class AuthResponseDto
+{
+    public string Token { get; set; } = string.Empty;
+    public string RefreshToken { get; set; } = string.Empty;
+    public DateTime ExpiresAt { get; set; }
+    public UserDto User { get; set; } = new();
 }
