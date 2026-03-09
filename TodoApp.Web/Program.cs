@@ -8,38 +8,54 @@ using TodoApp.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// --- 1. KONFIGURASI PORT (WAJIB UNTUK RAILWAY) ---
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8081"; // Default port berbeda dari backend
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents(options =>
     {
-        options.DetailedErrors = true; // ← tambahkan ini
+        options.DetailedErrors = true;
     });
 
-// MudBlazor
+// MudBlazor (Sesuai kode asli Anda)
 builder.Services.AddMudServices(config =>
 {
-    config.SnackbarConfiguration.PositionClass =
-        Defaults.Classes.Position.BottomRight;
+    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight;
     config.SnackbarConfiguration.PreventDuplicates = false;
     config.SnackbarConfiguration.ShowCloseIcon = true;
     config.SnackbarConfiguration.VisibleStateDuration = 3000;
 });
 
-// HttpClient
-builder.Services.AddScoped(sp => new HttpClient
+// --- 2. HTTPCLIENT DINAMIS ---
+builder.Services.AddScoped(sp =>
 {
-    BaseAddress = new Uri("https://localhost:7000/")
+    // 1. Coba ambil dari Environment Variable "BACKEND_URL" (Prioritas Railway)
+    // 2. Jika kosong, coba ambil dari appsettings.json "ApiBaseUrl"
+    // 3. Jika masih kosong, gunakan localhost sebagai pertahanan terakhir
+    var backendUrl = builder.Configuration["BACKEND_URL"]
+                     ?? builder.Configuration["ApiBaseUrl"]
+                     ?? "https://localhost:7000/";
+
+    // Pastikan URL diakhiri dengan garis miring (/) untuk HttpClient
+    if (!backendUrl.EndsWith("/")) backendUrl += "/";
+
+    return new HttpClient
+    {
+        BaseAddress = new Uri(backendUrl)
+    };
 });
 
-// Ganti bagian AddAuthentication dengan ini
+// Autentikasi (Sesuai kode asli Anda)
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = "BlazorAuth";
 })
 .AddCookie("BlazorAuth", options =>
 {
-    options.LoginPath = "/login";           // ← custom login path
+    options.LoginPath = "/login";
     options.LogoutPath = "/logout";
-    options.AccessDeniedPath = "/login";    // ← redirect ke /login jika 403
+    options.AccessDeniedPath = "/login";
 });
 
 builder.Services.AddAuthorization();
@@ -59,15 +75,20 @@ var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error");
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// --- 3. HANDLING HTTPS REDIRECT DI RAILWAY ---
+// Sama seperti backend, matikan redirect jika di Railway untuk menghindari loop
+if (Environment.GetEnvironmentVariable("RAILWAY_ENVIRONMENT") == null)
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseStaticFiles();
 app.UseAntiforgery();
 
-// ← TAMBAHKAN kedua baris ini
 app.UseAuthentication();
 app.UseAuthorization();
 
