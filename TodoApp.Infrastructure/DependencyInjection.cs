@@ -17,8 +17,14 @@ namespace TodoApp.Infrastructure
             this IServiceCollection services, IConfiguration configuration)
         {
             // Database
+            //services.AddDbContext<AppDbContext>(options =>
+            //    options.UseSqlServer(
+            //        configuration.GetConnectionString("DefaultConnection"),
+            //        b => b.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName)
+            //    ));
+
             services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(
+                options.UseNpgsql(
                     configuration.GetConnectionString("DefaultConnection"),
                     b => b.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName)
                 ));
