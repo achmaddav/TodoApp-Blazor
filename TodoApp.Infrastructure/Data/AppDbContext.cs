@@ -24,12 +24,26 @@ namespace TodoApp.Infrastructure.Data
 
         public override async Task<int> SaveChangesAsync(CancellationToken ct = default)
         {
+            // Fix DateTime Kind untuk PostgreSQL
+            foreach (var entry in ChangeTracker.Entries())
+            {
+                foreach (var property in entry.Properties)
+                {
+                    if (property.CurrentValue is DateTime dateTime &&
+                        dateTime.Kind == DateTimeKind.Unspecified)
+                    {
+                        property.CurrentValue = DateTime.SpecifyKind(dateTime, DateTimeKind.Utc);
+                    }
+                }
+            }
+
             // Auto-set UpdatedAt on modified entities
             foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
             {
                 if (entry.State == EntityState.Modified)
                     entry.Entity.UpdatedAt = DateTime.UtcNow;
             }
+
             return await base.SaveChangesAsync(ct);
         }
     }
