@@ -1,11 +1,10 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
 using TodoApp.API.Extensions;
 using TodoApp.API.Middleware;
 using TodoApp.Application;
 using TodoApp.Infrastructure;
 using TodoApp.Infrastructure.Data;
 using TodoApp.Infrastructure.Data.Seeders;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,27 +42,15 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 
 // --- 2. CORS DINAMIS (PENTING AGAR BISA DIAKSES FRONTEND) ---
-// --- 2. CORS DINAMIS ---
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("BlazorPolicy", policy =>
     {
+        // Ambil URL Frontend dari Environment Variable Railway
         var frontendUrl = builder.Configuration["FRONTEND_URL"];
 
-        // Daftar origin yang diizinkan
-        var origins = new List<string> {
-            "https://localhost:7001",
-            "http://localhost:5001"
-        };
-
-        // Tambahkan URL Railway Blazor kamu di sini jika variabel belum di-set
-        if (!string.IsNullOrEmpty(frontendUrl))
-        {
-            origins.Add(frontendUrl.TrimEnd('/'));
-        }
-
-        // TIPS: Tambahkan URL asli Blazor Railway kamu secara manual di sini jika ragu
-        origins.Add("https://simpletaskapp.up.railway.app");
+        var origins = new List<string> { "https://localhost:7001", "http://localhost:5001" };
+        if (!string.IsNullOrEmpty(frontendUrl)) origins.Add(frontendUrl);
 
         policy.WithOrigins(origins.ToArray())
             .AllowAnyHeader()
@@ -77,14 +64,8 @@ var app = builder.Build();
 // Auto migrate & seed
 using (var scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<AppDbContext>();
-
-    // Paksa buat database dan tabel tanpa peduli riwayat migrasi
-    // Ini sangat ampuh untuk database yang masih kosong di Railway
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await context.Database.EnsureCreatedAsync();
-
-    // Jalankan seeder
     await DataSeeder.SeedAsync(context);
 }
 
