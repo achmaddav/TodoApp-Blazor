@@ -65,9 +65,27 @@ var app = builder.Build();
 // Auto migrate & seed
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await context.Database.EnsureCreatedAsync();
-    await DataSeeder.SeedAsync(context);
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<AppDbContext>();
+
+        // GUNAKAN INI SAJA (Hapus EnsureCreated)
+        if (context.Database.GetPendingMigrations().Any())
+        {
+            await context.Database.MigrateAsync();
+        }
+
+        // Jalankan Seeder setelah migrasi sukses
+        await DataSeeder.SeedAsync(context);
+
+        Console.WriteLine("Database Migration & Seeding Berhasil!");
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Terjadi kesalahan saat migrasi atau seeding database.");
+    }
 }
 
 // --- 3. SWAGGER DI DEVELOPMENT & RAILWAY ---
@@ -97,30 +115,5 @@ app.UseCors("BlazorPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<AppDbContext>();
-
-        // GUNAKAN INI SAJA (Hapus EnsureCreated)
-        if (context.Database.GetPendingMigrations().Any())
-        {
-            await context.Database.MigrateAsync();
-        }
-
-        // Jalankan Seeder setelah migrasi sukses
-        await DataSeeder.SeedAsync(context);
-
-        Console.WriteLine("Database Migration & Seeding Berhasil!");
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Terjadi kesalahan saat migrasi atau seeding database.");
-    }
-}
 
 app.Run();
