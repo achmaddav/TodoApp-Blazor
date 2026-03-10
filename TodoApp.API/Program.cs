@@ -45,18 +45,18 @@ builder.Services.AddHttpContextAccessor();
 // --- 2. CORS DINAMIS (PENTING AGAR BISA DIAKSES FRONTEND) ---
 builder.Services.AddCors(options =>
 {
-    builder.Services.AddCors(options =>
+    options.AddPolicy("BlazorPolicy", policy =>
     {
-        options.AddPolicy("BlazorPolicy", policy =>
-        {
-            policy.WithOrigins(
-                    "https://simpletaskapp.up.railway.app",  
-                    "https://localhost:7001",
-                    "http://localhost:5001")
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials();
-        });
+        // Ambil URL Frontend dari Environment Variable Railway
+        var frontendUrl = builder.Configuration["FRONTEND_URL"];
+
+        var origins = new List<string> { "https://localhost:7001", "http://localhost:5001" };
+        if (!string.IsNullOrEmpty(frontendUrl)) origins.Add(frontendUrl);
+
+        policy.WithOrigins(origins.ToArray())
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
