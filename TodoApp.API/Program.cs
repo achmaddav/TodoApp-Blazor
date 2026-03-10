@@ -1,10 +1,11 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using TodoApp.API.Extensions;
 using TodoApp.API.Middleware;
 using TodoApp.Application;
 using TodoApp.Infrastructure;
 using TodoApp.Infrastructure.Data;
 using TodoApp.Infrastructure.Data.Seeders;
-using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,9 +65,18 @@ var app = builder.Build();
 // Auto migrate & seed
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await context.Database.EnsureCreatedAsync();
-    await DataSeeder.SeedAsync(context);
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<AppDbContext>();
+        await context.Database.MigrateAsync();        // ? auto migrate
+        await DataSeeder.SeedAsync(context);           // ? seed data awal
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Error saat migration database");
+    }
 }
 
 // --- 3. SWAGGER DI DEVELOPMENT & RAILWAY ---
