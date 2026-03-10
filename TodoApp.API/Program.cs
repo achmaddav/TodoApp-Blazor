@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using TodoApp.API.Extensions;
 using TodoApp.API.Middleware;
@@ -69,8 +69,8 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<AppDbContext>();
-        await context.Database.MigrateAsync();        // ? auto migrate
-        await DataSeeder.SeedAsync(context);           // ? seed data awal
+        await context.Database.MigrateAsync();        // ← auto migrate
+        await DataSeeder.SeedAsync(context);           // ← seed data awal
     }
     catch (Exception ex)
     {
