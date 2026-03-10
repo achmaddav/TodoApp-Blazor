@@ -16,6 +16,7 @@ namespace TodoApp.Infrastructure
         public static IServiceCollection AddInfrastructure(
             this IServiceCollection services, IConfiguration configuration)
         {
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
             // Database
             //services.AddDbContext<AppDbContext>(options =>
             //    options.UseSqlServer(
@@ -27,7 +28,9 @@ namespace TodoApp.Infrastructure
                 options.UseNpgsql(
                     configuration.GetConnectionString("DefaultConnection"),
                     b => b.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName)
-                ));
+                )
+                .EnableSensitiveDataLogging(false))
+            ;
 
             // Repositories
             services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
