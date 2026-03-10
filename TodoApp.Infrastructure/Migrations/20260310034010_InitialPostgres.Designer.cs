@@ -12,8 +12,8 @@ using TodoApp.Infrastructure.Data;
 namespace TodoApp.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260310022932_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260310034010_InitialPostgres")]
+    partial class InitialPostgres
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

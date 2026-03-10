@@ -66,26 +66,14 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<AppDbContext>();
+    var context = services.GetRequiredService<AppDbContext>();
 
-        // GUNAKAN INI SAJA (Hapus EnsureCreated)
-        if (context.Database.GetPendingMigrations().Any())
-        {
-            await context.Database.MigrateAsync();
-        }
+    // Paksa buat database dan tabel tanpa peduli riwayat migrasi
+    // Ini sangat ampuh untuk database yang masih kosong di Railway
+    await context.Database.EnsureCreatedAsync();
 
-        // Jalankan Seeder setelah migrasi sukses
-        await DataSeeder.SeedAsync(context);
-
-        Console.WriteLine("Database Migration & Seeding Berhasil!");
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Terjadi kesalahan saat migrasi atau seeding database.");
-    }
+    // Jalankan seeder
+    await DataSeeder.SeedAsync(context);
 }
 
 // --- 3. SWAGGER DI DEVELOPMENT & RAILWAY ---
