@@ -98,20 +98,28 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// --- Tambahkan kode ini sebelum app.Run(); ---
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
         var context = services.GetRequiredService<AppDbContext>();
-        // Melakukan migrasi database (membuat tabel jika belum ada)
-        context.Database.Migrate();
+
+        // GUNAKAN INI SAJA (Hapus EnsureCreated)
+        if (context.Database.GetPendingMigrations().Any())
+        {
+            await context.Database.MigrateAsync();
+        }
+
+        // Jalankan Seeder setelah migrasi sukses
+        await DataSeeder.SeedAsync(context);
+
+        Console.WriteLine("Database Migration & Seeding Berhasil!");
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Terjadi kesalahan saat migrasi database.");
+        logger.LogError(ex, "Terjadi kesalahan saat migrasi atau seeding database.");
     }
 }
 
