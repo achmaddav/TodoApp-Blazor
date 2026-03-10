@@ -69,8 +69,15 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<AppDbContext>();
-        await context.Database.MigrateAsync();        // ← auto migrate
-        await DataSeeder.SeedAsync(context);           // ← seed data awal
+        
+        // Cek pending migrations dulu sebelum migrate
+        var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
+        if (pendingMigrations.Any())
+        {
+            await context.Database.MigrateAsync();
+        }
+        
+        await DataSeeder.SeedAsync(context);
     }
     catch (Exception ex)
     {
