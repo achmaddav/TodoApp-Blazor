@@ -1,10 +1,11 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using TodoApp.API.Extensions;
 using TodoApp.API.Middleware;
 using TodoApp.Application;
 using TodoApp.Infrastructure;
 using TodoApp.Infrastructure.Data;
 using TodoApp.Infrastructure.Data.Seeders;
-using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -96,5 +97,22 @@ app.UseCors("BlazorPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// --- Tambahkan kode ini sebelum app.Run(); ---
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<AppDbContext>();
+        // Melakukan migrasi database (membuat tabel jika belum ada)
+        context.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Terjadi kesalahan saat migrasi database.");
+    }
+}
 
 app.Run();
